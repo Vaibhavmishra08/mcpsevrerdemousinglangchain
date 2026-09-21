@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather AI Agent Studio | LangChain & Gemini</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Marked parser for Markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <i class="fa-solid fa-brain glow-icon"></i>
+          <span>Weather Agent Studio</span>
+        </div>
+        
+        <!-- Model Selector in Sidebar -->
+        <div class="model-picker-wrapper">
+          <label for="model-select"><i class="fa-solid fa-microchip"></i> Active Model</label>
+          <div class="select-container">
+            <select id="model-select" class="custom-select">
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended)</option>
+              <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
+              <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+              <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite</option>
+              <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
+              <option value="gemini-flash-latest">Gemini Flash Latest</option>
+              <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3><i class="fa-solid fa-server"></i> Active MCP Servers</h3>
+        <div class="server-card">
+          <div class="server-status active"></div>
+          <div class="server-info">
+            <span class="server-name">weather.py</span>
+            <span class="server-transport">Transport: stdio (FastMCP)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3><i class="fa-solid fa-screwdriver-wrench"></i> Registered Tools</h3>
+        <div id="tools-list" class="tools-list">
+          <div class="tool-chip loading">
+            <div class="spinner-small"></div>
+            <span>Discovering tools via MCP...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="status-indicator">
+          <span class="dot online" id="status-dot"></span>
+          <span id="agent-status-text">Connected & Ready</span>
+        </div>
+        <button id="open-settings-btn" class="settings-btn" title="API Key & Settings">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="chat-wrapper">
+      <header class="chat-header">
+        <div class="agent-title">
+          <h2>Weather AI Agent</h2>
+          <p>Powered by LangChain, MCP (Model Context Protocol) & Google Gemini</p>
+        </div>
+        <div class="header-actions">
+          <div class="active-model-pill" id="header-model-pill">
+            <i class="fa-solid fa-bolt"></i>
+            <span id="header-model-name">Gemini 2.5 Flash</span>
+          </div>
+          <button id="settings-top-btn" class="icon-btn" title="Configure API Key">
+            <i class="fa-solid fa-key"></i>
+          </button>
+          <button id="clear-btn" class="icon-btn" title="Clear Chat">
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Toast Notification Area -->
+      <div id="toast-container" class="toast-container"></div>
+
+      <div id="chat-container" class="chat-container">
+        <!-- Welcome banner -->
+        <div id="welcome-view" class="welcome-view">
+          <div class="welcome-card glass">
+            <div class="welcome-icon">
+              <i class="fa-solid fa-cloud-sun-rain"></i>
+            </div>
+            <h1>Weather Intelligence Agent</h1>
+            <p>I am an intelligent agent connected via <strong>Model Context Protocol (MCP)</strong> to live meteorological data. Ask me about weather conditions, temperature, or wind speeds anywhere on Earth!</p>
+
+            <div class="suggestions-label">Try asking:</div>
+            <div class="suggestions-grid">
+              <button class="suggestion-pill" onclick="sendSuggestion('How is the weather in Tokyo today?')">
+                <i class="fa-solid fa-location-dot"></i> Tokyo weather
+              </button>
+              <button class="suggestion-pill" onclick="sendSuggestion('What is the exact current weather in Paris right now?')">
+                <i class="fa-solid fa-location-dot"></i> Weather in Paris
+              </button>
+              <button class="suggestion-pill" onclick="sendSuggestion('Give me temperature and wind speed for London.')">
+                <i class="fa-solid fa-location-dot"></i> London conditions
+              </button>
+              <button class="suggestion-pill" onclick="sendSuggestion('Is it raining in New York today?')">
+                <i class="fa-solid fa-location-dot"></i> New York rain check
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Dynamic message feed inserted here -->
+      </div>
+
+      <!-- Thinking / Execution Indicator -->
+      <div id="typing-indicator" class="typing-indicator hidden">
+        <div class="typing-bubble glass">
+          <div class="spinner"></div>
+          <span id="typing-text">Agent reasoning & querying MCP tools...</span>
+        </div>
+      </div>
+
+      <!-- Input Bar -->
+      <footer class="input-container">
+        <form id="chat-form" class="input-form glass">
+          <input 
+            type="text" 
+            id="user-input" 
+            placeholder="Type your weather question (e.g., How is the weather in Tokyo today?)..." 
+            autocomplete="off"
+            required
+          />
+          <button type="submit" id="send-btn" class="send-btn" title="Send message">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </form>
+        <div class="input-footer">
+          <span>Automatic Rate-Limit Fallback enabled • Press Enter to send</span>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Settings & API Key Modal -->
+  <div id="settings-modal" class="modal-backdrop hidden">
+    <div class="modal-card glass">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-key"></i> Gemini API Key & Settings</h3>
+        <button id="close-modal-btn" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          If you encounter quota limits (HTTP 429) on free tier models, you can switch models in the sidebar or provide a new Google AI Studio API key here.
+        </p>
+        <div class="form-group">
+          <label for="api-key-input">Google Gemini API Key</label>
+          <div class="input-with-icon">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" id="api-key-input" placeholder="AIzaSy..." autocomplete="off">
+            <button type="button" id="toggle-key-visibility" class="ghost-btn" title="Toggle visibility">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+          <span class="input-help">Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a>.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="modal-model-select">Preferred Model</label>
+          <select id="modal-model-select" class="custom-select">
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended - High Quota)</option>
+            <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
+            <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+            <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite</option>
+            <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
+            <option value="gemini-flash-latest">Gemini Flash Latest</option>
+            <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancel-modal-btn" class="secondary-btn">Cancel</button>
+        <button id="save-settings-btn" class="primary-btn"><i class="fa-solid fa-check"></i> Save & Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
