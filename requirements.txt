@@ -1,4 +1,9 @@
-langchain-groq
-langchain-mcp-adapters
-mcp
-langgraph
+fastapi>=0.115.0
+uvicorn>=0.30.0
+langchain-google-genai>=2.0.0
+langchain-groq>=0.2.0
+langchain-mcp-adapters>=0.1.0
+mcp>=1.2.0
+httpx>=0.27.0
+python-dotenv>=1.0.0
+pydantic>=2.0.0

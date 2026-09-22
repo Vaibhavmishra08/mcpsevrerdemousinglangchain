@@ -1,3 +1,4 @@
+import sys
 import os
 import re
 import asyncio
@@ -52,12 +53,13 @@ async def lifespan(app: FastAPI):
         print("[WARNING] GOOGLE_API_KEY is missing or unconfigured in .env file.")
     
     try:
-        # Initialize MultiServerMCPClient
+        # Initialize MultiServerMCPClient using current python runtime
+        python_exe = sys.executable or "python"
         mcp_client = MultiServerMCPClient(
             {
                 "weather": {
-                    "command": "uv",
-                    "args": ["run", "weather.py"],
+                    "command": python_exe,
+                    "args": ["weather.py"],
                     "transport": "stdio",
                 }
             }
